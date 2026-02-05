@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Process Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #0C0C0C;
+            color: #CCCCCC;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+        #container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Login Screen */
+        #loginScreen {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #0C0C0C;
+        }
+
+        .loginBox {
+            border: 1px solid #1E1E1E;
+            padding: 30px;
+            background-color: #0C0C0C;
+            width: 400px;
+        }
+
+        .loginBox h2 {
+            color: #00FF00;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .loginBox input {
+            width: 100%;
+            padding: 8px;
+            background-color: #0C0C0C;
+            border: 1px solid #1E1E1E;
+            color: #00FF00;
+            font-family: 'Consolas', monospace;
+            margin-bottom: 15px;
+        }
+
+        .loginBox input:focus {
+            outline: none;
+            border-color: #00FF00;
+        }
+
+        .loginBox button {
+            width: 100%;
+            padding: 8px;
+            background-color: #1E1E1E;
+            border: 1px solid #00FF00;
+            color: #00FF00;
+            cursor: pointer;
+            font-family: 'Consolas', monospace;
+        }
+
+        .loginBox button:hover {
+            background-color: #00FF00;
+            color: #0C0C0C;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 250px;
+            background-color: #0C0C0C;
+            border-right: 1px solid #1E1E1E;
+            padding: 15px;
+            display: none;
+            flex-direction: column;
+        }
+
+        #sidebar.active {
+            display: flex;
+        }
+
+        .sidebarHeader {
+            color: #00FF00;
+            margin-bottom: 20px;
+            font-size: 12px;
+            border-bottom: 1px solid #1E1E1E;
+            padding-bottom: 10px;
+        }
+
+        .sidebarSection {
+            margin-bottom: 20px;
+        }
+
+        .sectionTitle {
+            color: #888;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .playerList, .leaderboardList {
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .playerItem {
+            color: #00FF00;
+            padding: 3px 0;
+        }
+
+        .playerItem.inGame {
+            color: #FFD700;
+        }
+
+        .leaderboardItem {
+            display: flex;
+            justify-content: space-between;
+            color: #CCCCCC;
+            padding: 2px 0;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            background-color: #1E1E1E;
+            border: 1px solid #00FF00;
+            color: #00FF00;
+            cursor: pointer;
+            font-family: 'Consolas', monospace;
+            font-size: 11px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: #00FF00;
+            color: #0C0C0C;
+        }
+
+        .btn:disabled {
+            border-color: #333;
+            color: #333;
+            cursor: not-allowed;
+        }
+
+        /* Main Area */
+        #mainArea {
+            flex: 1;
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+        }
+
+        #mainArea.active {
+            display: flex;
+        }
+
+        .mainHeader {
+            color: #00FF00;
+            margin-bottom: 20px;
+            font-size: 12px;
+            border-bottom: 1px solid #1E1E1E;
+            padding-bottom: 10px;
+        }
+
+        /* Lobby View */
+        #lobbyView {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .lobbyMessage {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+        .actionButtons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .actionBtn {
+            padding: 12px 30px;
+            background-color: #1E1E1E;
+            border: 1px solid #00FF00;
+            color: #00FF00;
+            cursor: pointer;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        .actionBtn:hover {
+            background-color: #00FF00;
+            color: #0C0C0C;
+        }
+
+        /* Game Board */
+        #gameView {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        #gameView.active {
+            display: flex;
+        }
+
+        .gameInfo {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #CCCCCC;
+            font-size: 12px;
+        }
+
+        .gameInfo .vs {
+            color: #FFD700;
+            margin: 10px 0;
+        }
+
+        .turnIndicator {
+            color: #00FF00;
+            margin-bottom: 20px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 2px;
+            background-color: #1E1E1E;
+            padding: 2px;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            background-color: #0C0C0C;
+            border: 1px solid #1E1E1E;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            cursor: pointer;
+            color: #00FF00;
+            font-weight: bold;
+        }
+
+        .cell:hover:not(.filled) {
+            background-color: #1E1E1E;
+        }
+
+        .cell.filled {
+            cursor: not-allowed;
+        }
+
+        .cell.O {
+            color: #FF4444;
+        }
+
+        /* Status Messages */
+        .statusMessage {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: #1E1E1E;
+            border: 1px solid #00FF00;
+            color: #00FF00;
+            font-size: 11px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .statusMessage.show {
+            display: block;
+        }
+
+        .statusMessage.error {
+            border-color: #FF4444;
+            color: #FF4444;
+        }
+
+        /* Chat */
+        #chatBox {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 300px;
+            height: 250px;
+            background-color: #0C0C0C;
+            border: 1px solid #1E1E1E;
+            display: none;
+            flex-direction: column;
+        }
+
+        #chatBox.active {
+            display: flex;
+        }
+
+        .chatHeader {
+            padding: 8px;
+            background-color: #1E1E1E;
+            color: #00FF00;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .chatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 10px;
+        }
+
+        .chatMessage {
+            margin-bottom: 8px;
+            color: #CCCCCC;
+        }
+
+        .chatMessage .username {
+            color: #00FF00;
+            font-weight: bold;
+        }
+
+        .chatInput {
+            display: flex;
+            border-top: 1px solid #1E1E1E;
+        }
+
+        .chatInput input {
+            flex: 1;
+            padding: 8px;
+            background-color: #0C0C0C;
+            border: none;
+            color: #00FF00;
+            font-family: 'Consolas', monospace;
+            font-size: 10px;
+        }
+
+        .chatInput input:focus {
+            outline: none;
+        }
+
+        .chatInput button {
+            padding: 8px 15px;
+            background-color: #1E1E1E;
+            border: none;
+            color: #00FF00;
+            cursor: pointer;
+            font-family: 'Consolas', monospace;
+            font-size: 10px;
+        }
+
+        /* Result Modal */
+        .resultModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(12, 12, 12, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .resultModal.show {
+            display: flex;
+        }
+
+        .resultContent {
+            border: 2px solid #00FF00;
+            padding: 40px;
+            text-align: center;
+            background-color: #0C0C0C;
+        }
+
+        .resultContent h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #00FF00;
+        }
+
+        .resultContent.loss h2 {
+            color: #FF4444;
+        }
+
+        .resultContent button {
+            margin-top: 20px;
+            padding: 10px 30px;
+            background-color: #1E1E1E;
+            border: 1px solid #00FF00;
+            color: #00FF00;
+            cursor: pointer;
+            font-family: 'Consolas', monospace;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0C0C0C;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1E1E1E;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00FF00;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen">
+        <div class="loginBox">
+            <h2>SYSTEM LOGIN REQUIRED</h2>
+            <input type="text" id="usernameInput" placeholder="Enter username..." maxlength="15" autocomplete="off">
+            <button onclick="login()">CONNECT</button>
+            <p style="color: #888; font-size: 10px; margin-top: 15px;">Enter any username to join the network</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div id="container" style="display: none;">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <div class="sidebarHeader">
+                <div>USER: <span id="currentUser"></span></div>
+                <div style="margin-top: 5px;">STATUS: CONNECTED</div>
+            </div>
+
+            <div class="sidebarSection">
+                <div class="sectionTitle">ACTIVE USERS (<span id="playerCount">0</span>)</div>
+                <div class="playerList" id="playerList"></div>
+            </div>
+
+            <div class="sidebarSection">
+                <div class="sectionTitle">LEADERBOARD</div>
+                <div class="leaderboardList" id="leaderboardList"></div>
+            </div>
+
+            <div class="sidebarSection" style="margin-top: auto;">
+                <button class="btn" onclick="toggleChat()">TOGGLE CHAT</button>
+            </div>
+        </div>
+
+        <!-- Main Area -->
+        <div id="mainArea">
+            <div class="mainHeader">
+                <span>SYSTEM PROCESS MANAGER v2.1</span>
+            </div>
+
+            <!-- Lobby View -->
+            <div id="lobbyView">
+                <div class="lobbyMessage" id="lobbyMessage">Ready to play</div>
+                <div class="actionButtons">
+                    <button class="actionBtn" onclick="findMatch()">QUICK MATCH</button>
+                    <button class="actionBtn" onclick="startTournament()">START TOURNAMENT</button>
+                </div>
+            </div>
+
+            <!-- Game View -->
+            <div id="gameView">
+                <div class="gameInfo">
+                    <div><span id="player1Name"></span> (X) <span class="vs">VS</span> <span id="player2Name"></span> (O)</div>
+                    <div>YOUR SYMBOL: <span id="yourSymbol"></span></div>
+                </div>
+                <div class="turnIndicator" id="turnIndicator">Waiting...</div>
+                <div class="board" id="board">
+                    <div class="cell" data-index="0" onclick="makeMove(0)"></div>
+                    <div class="cell" data-index="1" onclick="makeMove(1)"></div>
+                    <div class="cell" data-index="2" onclick="makeMove(2)"></div>
+                    <div class="cell" data-index="3" onclick="makeMove(3)"></div>
+                    <div class="cell" data-index="4" onclick="makeMove(4)"></div>
+                    <div class="cell" data-index="5" onclick="makeMove(5)"></div>
+                    <div class="cell" data-index="6" onclick="makeMove(6)"></div>
+                    <div class="cell" data-index="7" onclick="makeMove(7)"></div>
+                    <div class="cell" data-index="8" onclick="makeMove(8)"></div>
+                </div>
+                <button class="btn" onclick="returnToLobby()" style="width: 200px;">RETURN TO LOBBY</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Box -->
+    <div id="chatBox">
+        <div class="chatHeader" onclick="toggleChat()">CHAT [CLICK TO TOGGLE]</div>
+        <div class="chatMessages" id="chatMessages"></div>
+        <div class="chatInput">
+            <input type="text" id="chatInput" placeholder="Type message..." maxlength="100">
+            <button onclick="sendChat()">SEND</button>
+        </div>
+    </div>
+
+    <!-- Status Message -->
+    <div class="statusMessage" id="statusMessage"></div>
+
+    <!-- Result Modal -->
+    <div class="resultModal" id="resultModal">
+        <div class="resultContent" id="resultContent">
+            <h2 id="resultText">YOU WIN!</h2>
+            <button onclick="closeResult()">BACK TO LOBBY</button>
+            <button onclick="requestRematch()">REMATCH</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        let currentUsername;
+        let currentGameId;
+        let yourSymbol;
+        let yourTurn = false;
+
+        function login() {
+            const username = document.getElementById('usernameInput').value.trim();
+            if (!username) {
+                showStatus('Please enter a username', 'error');
+                return;
+            }
+
+            socket = io();
+            
+            socket.emit('join', username);
+
+            socket.on('joined', (data) => {
+                currentUsername = data.username;
+                document.getElementById('currentUser').textContent = currentUsername;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('container').style.display = 'flex';
+                document.getElementById('sidebar').classList.add('active');
+                document.getElementById('mainArea').classList.add('active');
+                showStatus('Connected to network');
+            });
+
+            socket.on('error', (msg) => {
+                showStatus(msg, 'error');
+            });
+
+            socket.on('lobbyUpdate', (data) => {
+                updatePlayerList(data.players);
+                updateLeaderboard(data.leaderboard);
+            });
+
+            socket.on('waiting', (msg) => {
+                document.getElementById('lobbyMessage').textContent = msg;
+            });
+
+            socket.on('searchCancelled', () => {
+                document.getElementById('lobbyMessage').textContent = 'Ready to play';
+            });
+
+            socket.on('gameStart', (data) => {
+                currentGameId = data.gameId;
+                yourSymbol = data.symbol;
+                yourTurn = data.yourTurn;
+                
+                document.getElementById('lobbyView').style.display = 'none';
+                document.getElementById('gameView').classList.add('active');
+                document.getElementById('yourSymbol').textContent = yourSymbol;
+                
+                showStatus(`Game started! You are ${yourSymbol}`);
+                resetBoard();
+            });
+
+            socket.on('gameUpdate', (state) => {
+                updateBoard(state);
+            });
+
+            socket.on('gameEnd', (data) => {
+                setTimeout(() => {
+                    showResult(data.result);
+                }, 500);
+            });
+
+            socket.on('opponentDisconnected', () => {
+                showStatus('Opponent disconnected', 'error');
+                returnToLobby();
+            });
+
+            socket.on('rematchRequest', (requesterId) => {
+                if (confirm('Opponent wants a rematch. Accept?')) {
+                    socket.emit('acceptRematch', requesterId);
+                }
+            });
+
+            socket.on('chatMessage', (data) => {
+                addChatMessage(data.username, data.message);
+            });
+
+            socket.on('tournamentStart', (data) => {
+                showStatus('Tournament started!');
+            });
+        }
+
+        function findMatch() {
+            socket.emit('findMatch');
+        }
+
+        function startTournament() {
+            socket.emit('startTournament');
+        }
+
+        function makeMove(position) {
+            if (!yourTurn) return;
+            
+            const cell = document.querySelector(`[data-index="${position}"]`);
+            if (cell.classList.contains('filled')) return;
+
+            socket.emit('makeMove', {
+                gameId: currentGameId,
+                position: position
+            });
+        }
+
+        function updateBoard(state) {
+            document.getElementById('player1Name').textContent = state.player1Name;
+            document.getElementById('player2Name').textContent = state.player2Name;
+
+            state.board.forEach((symbol, index) => {
+                const cell = document.querySelector(`[data-index="${index}"]`);
+                if (symbol) {
+                    cell.textContent = symbol;
+                    cell.classList.add('filled', symbol);
+                }
+            });
+
+            yourTurn = state.currentTurn === socket.id;
+            document.getElementById('turnIndicator').textContent = yourTurn ? 'YOUR TURN' : 'OPPONENT\'S TURN';
+            document.getElementById('turnIndicator').style.color = yourTurn ? '#00FF00' : '#FFD700';
+        }
+
+        function resetBoard() {
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('filled', 'X', 'O');
+            });
+        }
+
+        function showResult(result) {
+            const modal = document.getElementById('resultModal');
+            const content = document.getElementById('resultContent');
+            const text = document.getElementById('resultText');
+            
+            content.classList.remove('loss');
+            
+            if (result === 'win') {
+                text.textContent = 'YOU WIN!';
+                text.style.color = '#00FF00';
+            } else if (result === 'loss') {
+                text.textContent = 'YOU LOSE';
+                text.style.color = '#FF4444';
+                content.classList.add('loss');
+            } else {
+                text.textContent = 'DRAW';
+                text.style.color = '#FFD700';
+            }
+            
+            modal.classList.add('show');
+        }
+
+        function closeResult() {
+            document.getElementById('resultModal').classList.remove('show');
+            returnToLobby();
+        }
+
+        function requestRematch() {
+            socket.emit('rematch', currentGameId);
+            document.getElementById('resultModal').classList.remove('show');
+            showStatus('Rematch request sent...');
+        }
+
+        function returnToLobby() {
+            document.getElementById('gameView').classList.remove('active');
+            document.getElementById('lobbyView').style.display = 'flex';
+            resetBoard();
+            currentGameId = null;
+            yourTurn = false;
+        }
+
+        function updatePlayerList(players) {
+            const list = document.getElementById('playerList');
+            document.getElementById('playerCount').textContent = players.length;
+            
+            list.innerHTML = players.map(p => 
+                `<div class="playerItem ${p.inGame ? 'inGame' : ''}">> ${p.username} ${p.inGame ? '[IN GAME]' : ''}</div>`
+            ).join('');
+        }
+
+        function updateLeaderboard(leaderboard) {
+            const list = document.getElementById('leaderboardList');
+            
+            list.innerHTML = leaderboard.map((p, i) => 
+                `<div class="leaderboardItem">
+                    <span>${i + 1}. ${p.username}</span>
+                    <span>${p.points}pts</span>
+                </div>`
+            ).join('');
+        }
+
+        function toggleChat() {
+            document.getElementById('chatBox').classList.toggle('active');
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                socket.emit('chatMessage', message);
+                input.value = '';
+            }
+        }
+
+        function addChatMessage(username, message) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'chatMessage';
+            div.innerHTML = `<span class="username">${username}:</span> ${message}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showStatus(message, type = 'normal') {
+            const status = document.getElementById('statusMessage');
+            status.textContent = message;
+            status.className = 'statusMessage show';
+            if (type === 'error') status.classList.add('error');
+            
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 3000);
+        }
+
+        // Enter key handlers
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('usernameInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+
+            document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendChat();
+            });
+        });
+    </script>
+</body>
+</html>
