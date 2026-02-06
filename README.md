@@ -269,6 +269,6 @@ Have fun and may the best player win! Remember to stay productive and only play 
 
 ---
 
-**Made with 💡 for office warriors everywhere by (HPX07)[https://github.com/hpx07]** 
+**Made with 💡 for office warriors everywhere by [HPX07](https://github.com/hpx07)** 
 
 
