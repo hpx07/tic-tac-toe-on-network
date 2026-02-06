@@ -1,4 +1,4 @@
-# TIC-TAC-TOE LAN TOURNAMENT 🎮
+# TIC-TAC-TOE TOURNAMENT 🎮
 
 A stealth office-friendly multiplayer Tic-Tac-Toe game with dark CMD-like appearance. Perfect for playing during work hours without drawing attention! 😎
 
